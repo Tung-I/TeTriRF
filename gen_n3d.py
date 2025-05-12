@@ -9,7 +9,8 @@ overlap = True
 
 
 # add scenes' names that need to be trained
-for name in ['sear_steak','cook_spinach','coffee_martini']:
+# for name in ['sear_steak','cook_spinach','coffee_martini']:
+for name in ['coffee_martini']:
 
 
     filename = f'./run_{name}.sh'

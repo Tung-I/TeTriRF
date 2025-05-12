@@ -1,9 +1,9 @@
 _base_ = '../default.py'
 expname = 'coffee_martini'
-basedir = './logs2/'
+basedir = './logs/'
 
 data = dict(
-	datadir='./n3d/coffee_martini/llff/',
+	datadir='./data/n3d/coffee_martini/llff/',
 	dataset_type='llff',
  	ndc=True,
 	xyz_min = [-1.4,  -1.4, -0.6],
@@ -11,8 +11,8 @@ data = dict(
 	load2gpu_on_the_fly=True,
     test_frames = [0],
 	factor = 3,
-
 )
+
 fine_model_and_render = dict(
 	num_voxels=210**3,
 	num_voxels_base=210**3,
