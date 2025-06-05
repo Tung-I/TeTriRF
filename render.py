@@ -2,7 +2,8 @@ import os, sys, copy, glob, json, time, random, argparse
 from shutil import copyfile
 from tqdm import tqdm, trange
 import wandb
-import mmcv
+# import mmcv
+from mmengine.config import Config
 import imageio
 import numpy as np
 import ipdb
@@ -25,6 +26,13 @@ def excepthook(exc_type, exc_value, exc_traceback):
 #sys.excepthook = excepthook
 
 wandbrun=None
+
+"""
+Usage:
+    python render.py --config configs/N3D/coffee_martini_iframe.py --frame_ids 0 --render_train --reald
+    python render.py --config configs/N3D/larger_feature.py --frame_ids 0 --render_test --reald
+    python render.py --config  configs/N3D/flame_steak.py --frame_ids 19 --render_test --reald
+"""
 
 def config_parser():
     '''Define command line arguments
@@ -99,7 +107,8 @@ def render_viewpoints(model, render_poses, HW, Ks, ndc, render_kwargs,
     lpips_alex = []
     lpips_vgg = []
 
-    curf = frame_id % len(render_poses)
+    curf = frame_id % len(render_poses) 
+    # curf=2
 
     for i, c2w in enumerate(tqdm(render_poses)):
         if i != curf and ndc:
@@ -195,6 +204,7 @@ def render_viewpoints(model, render_poses, HW, Ks, ndc, render_kwargs,
             if rgb8.shape[-1]<3:
                 rgb8 = np.repeat(rgb8, 3, axis=-1)
             imageio.imwrite(filename, rgb8)
+
 
     rgbs = np.array(rgbs)
     depths = np.array(depths)
@@ -303,7 +313,8 @@ if __name__=='__main__':
     # load setup
     parser = config_parser()
     args = parser.parse_args()
-    cfg = mmcv.Config.fromfile(args.config)
+    # cfg = mmcv.Config.fromfile(args.config)
+    cfg = Config.fromfile(args.config)
 
 
     cfg.data.frame_ids = args.frame_ids
@@ -359,7 +370,8 @@ if __name__=='__main__':
                 if args.reald:
                     ckpt_path = os.path.join(cfg.basedir, cfg.expname, f"fine_last_{frame_id}.tar")
                 else:
-                    ckpt_path = os.path.join(cfg.basedir, cfg.expname, f"raw_out/fine_last_{frame_id}.tar")
+                    # ckpt_path = os.path.join(cfg.basedir, cfg.expname, f"raw_out/fine_last_{frame_id}.tar")
+                    ckpt_path = os.path.join(cfg.basedir, cfg.expname, f"compressed_20/fine_last_{frame_id}.tar")
                 #ckpt_path = os.path.join(cfg.basedir, cfg.expname, f"fine_last_{frame_id}.tar")
 
             ckpt_name = ckpt_path.split('/')[-1][:-4]
@@ -432,7 +444,10 @@ if __name__=='__main__':
 
         # render trainset and eval
         if args.render_train:
-            testsavedir = os.path.join(cfg.basedir, cfg.expname, f'render_train')
+            if args.reald:
+                testsavedir = os.path.join(cfg.basedir, cfg.expname, f'render_train')
+            else:
+                testsavedir = os.path.join(cfg.basedir, cfg.expname, f'render_train_compressed')
             os.makedirs(testsavedir, exist_ok=True)
             print('All results are dumped into', testsavedir)
             i_train = data_dict['i_train']
@@ -456,7 +471,10 @@ if __name__=='__main__':
 
         # render testset and eval
         if args.render_test:
-            testsavedir = os.path.join(cfg.basedir, cfg.expname, f'render_test')
+            if args.reald:
+                testsavedir = os.path.join(cfg.basedir, cfg.expname, f'render_test')
+            else:
+                testsavedir = os.path.join(cfg.basedir, cfg.expname, f'render_test_compressed')
             os.makedirs(testsavedir, exist_ok=True)
             print('All results are dumped into', testsavedir)
             i_test = data_dict['i_test']

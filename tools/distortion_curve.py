@@ -21,7 +21,9 @@ import wandb
 
 parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument('--name', required=True,
-                    help='config file path')
+                    help='config file folder name')
+parser.add_argument('--log_dir', type=str, default='logs',
+                    help='log dir')
 parser.add_argument("--codec", type=str, default='h265',
                     help='h265 or mpg2')
 
@@ -29,9 +31,8 @@ args = parser.parse_args()
 
 
 
-name = args.name
 # !!!!! modify the path to the output folder
-mypath = f'/logs2/{name}/'
+mypath = os.path.join(args.log_dir, args.name)
 
 
 
@@ -62,13 +63,15 @@ wandbrun = wandb.init(
     project="NeRFVideo_Joint",
 
     resume = "allow",
-    id = 'compressionV7_'+name+'_'+args.codec,
+    id = 'compressionV7_'+args.name+'_'+args.codec,
 )
 
 
 
 for qp in qps:
+    print(f"Converting to video with qp {qp}")
     os.system(f"python tools/planes_to_videos.py --logdir {mypath}  --numframe {numframe} --qp {qp} --codec {args.codec}")
+    print(f"Inverting video with qp {qp}")
     os.system(f"python tools/videos_to_planes.py --dir {mypath}raw  --numframe {numframe} --codec {args.codec}")
     ss = 0
 

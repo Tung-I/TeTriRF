@@ -1,0 +1,5 @@
+  0%|                                     | 0/2 [00:00<?, ?it/s]
+Traceback (most recent call last):
+  File "/work/pi_rsitaram_umass_edu/tungi/TeTriRF/tools/videos_to_planes.py", line 175, in <module>
+    plane = untile_image(torch.tensor(quant_img.astype(np.float32))/int(2**16-1),
+AttributeError: 'NoneType' object has no attribute 'astype'

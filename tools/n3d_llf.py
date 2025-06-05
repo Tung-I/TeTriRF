@@ -67,18 +67,6 @@ def convert_nv3d_to_llff(video_dataset_path, llff_dataset_path, num_frames):
             image_dir = os.path.join(frame_dir, 'images')
             os.makedirs(image_dir, exist_ok=True)
 
-       
-        
-            
-            
-
-            
-            # Check if the current frame position is correct
-            #current_frame_id = int(video.get(cv2.CAP_PROP_POS_FRAMES))
-            #if current_frame_id != frame_id:
-            #    print(f"Warning: Skipping frame {frame_id} in video {video_file}. Could not seek to the correct position.")
-            #    continue
-            
             # Read the frame
             success, image = video.read()
             

@@ -1,21 +1,23 @@
 _base_ = '../default.py'
-expname = 'coffee_martini'
+expname = 'flame_steak_large_voxels'
 basedir = './logs/'
 
 data = dict(
-	datadir='./data/n3d/coffee_martini/llff/',
+	datadir='./data/n3d/flame_steak/llff/',
 	dataset_type='llff',
  	ndc=True,
 	xyz_min = [-1.4,  -1.4, -0.6],
-	xyz_max = [ 1.4,   1.4,  1],
+	xyz_max = [ 1.4,   1.4,  0.6],
+
 	load2gpu_on_the_fly=True,
+
     test_frames = [0],
 	factor = 3,
-)
 
+)
 fine_model_and_render = dict(
-	num_voxels=210**3,
-	num_voxels_base=210**3,
+	num_voxels=400**3,
+	num_voxels_base=400**3,
 	k0_type='PlaneGrid',
 	rgbnet_dim=30,
     rgbnet_width=128,
@@ -36,7 +38,7 @@ fine_train = dict(
     tv_before=25000,                  # count total variation before the given number of iterations
     tv_dense_before=25000,            # count total variation densely before the given number of iterations
     weight_tv_density=1e-5,        # weight of total variation loss of density voxel grid
-	weight_tv_k0=1e-4,
+	weight_tv_k0=0,
 	weight_l1_loss=0.01,
 	weight_distortion = 0.0015,
 	pg_scale=[2000*_k,3500*_k, 5000*_k, 6000*_k],

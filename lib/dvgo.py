@@ -675,7 +675,6 @@ def get_training_rays_multi_frame(rgb_tr_ori, train_poses, HW, Ks, ndc, inverse_
                 inverse_y=inverse_y, flip_x=flip_x, flip_y=flip_y)
         mask = torch.ones(img.shape[:2], device=DEVICE, dtype=torch.bool)
 
-
         if not flatten:
             for i in range(0, img.shape[0], CHUNK):
                 mask[i:i+CHUNK] = model.hit_coarse_geo(

@@ -15,6 +15,7 @@ import copy
 from .dvgo import DirectVoxGO
 from .dmpigo import DirectMPIGO
 from .sh import eval_sh
+import time
 
 class RGB_Net(torch.nn.Module):
     def __init__(self,dim0=None, rgbnet_width=None, rgbnet_depth=None):
@@ -344,6 +345,7 @@ class DirectVoxGO_Video(torch.nn.Module):
         frameid = frame_ids_unique[0]
         if (str(frameid-1) in self.dvgos):
             frameid2 = str(frameid-1)
+            # print(f"Compute k0 l1 loss between {frameid} and {frameid2}")
             if not self.dvgos[str(frameid)].k0.xy_plane.size() == self.dvgos[frameid2].k0.xy_plane.size():
                 xy_plane, xz_plane, yz_plane = self.dvgos[frameid2].k0.scale_volume_grid_value(self.dvgos[str(frameid)].world_size)
 
@@ -359,6 +361,7 @@ class DirectVoxGO_Video(torch.nn.Module):
                 N+=4
         if str(frameid+1) in self.dvgos:
             frameid2 = str(frameid+1)
+            # print(f"Compute k0 l1 loss between {frameid} and {frameid2}")
             loss += F.l1_loss(self.dvgos[str(frameid)].k0.xy_plane, self.dvgos[frameid2].k0.xy_plane)
             loss += F.l1_loss(self.dvgos[str(frameid)].k0.xz_plane, self.dvgos[frameid2].k0.xz_plane)
             loss += F.l1_loss(self.dvgos[str(frameid)].k0.yz_plane, self.dvgos[frameid2].k0.yz_plane)
@@ -366,6 +369,7 @@ class DirectVoxGO_Video(torch.nn.Module):
             N+=4
         if N == 0:
             return loss
+        time.sleep(0.5)
         return loss/N
 
 

@@ -31,10 +31,10 @@ class DirectMPIGO(torch.nn.Module):
         self.register_buffer('xyz_max', torch.Tensor(xyz_max))
         self.fast_color_thres = fast_color_thres
 
-        # determine init grid resolution
+        # determine self.world_size and self.voxel_size_ratio
         self._set_grid_resolution(num_voxels, mpi_depth)
 
-        # init density voxel grid
+        # init density voxel grid (learnable 3d tensor)
         self.density_type = density_type
         self.density_config = density_config
         self.density = grid.create_grid(
@@ -139,6 +139,10 @@ class DirectMPIGO(torch.nn.Module):
 
     @torch.no_grad()
     def scale_volume_grid(self, num_voxels):
+        """
+        reduce grid resolution at user-specified iterations, for coarse-to-fine refinement. 
+        Rebuilds density & feature grids at the new resolution and updates the mask cache by thresholding pooled α values.
+        """
         print('dmpigo: scale_volume_grid start')
         ori_world_size = self.world_size
         self._set_grid_resolution(num_voxels, self.mpi_depth)

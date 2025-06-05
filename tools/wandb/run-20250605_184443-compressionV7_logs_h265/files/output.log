@@ -1,0 +1,5 @@
+  0%|                                     | 0/2 [00:04<?, ?it/s]
+Traceback (most recent call last):
+  File "/work/pi_rsitaram_umass_edu/tungi/TeTriRF/tools/videos_to_planes.py", line 197, in <module>
+    gt_quant_img = make_density_image(raw_frame['density'],int(2**16-1), h = quant_img.shape[0],w = quant_img.shape[1])
+KeyError: 'density'

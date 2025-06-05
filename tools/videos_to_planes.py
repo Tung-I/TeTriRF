@@ -5,13 +5,16 @@ from tqdm import tqdm, trange
 import mmcv
 import imageio
 import numpy as np
-import ipdb
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import wandb
 import cv2
+
+"""
+Usage: python videos_to_planes.py --dir ../logs/flame_steak --numframe 20 
+"""
 
 def psnr(img1, img2, max_val=1.0):
     mse = F.mse_loss(img1, img2)
@@ -35,7 +38,7 @@ def untile_image(image,h,w,ndim):
     return features
 
 
-def tile_maker(feat_plane, h = 2160, w= 3840):
+def tile_maker(feat_plane, h = 2560, w= 2560):
     image = torch.zeros(h,w)
 
     h,w = list(feat_plane.size())[-2:]
@@ -56,7 +59,7 @@ def tile_maker(feat_plane, h = 2160, w= 3840):
 
     return image
 
-def make_density_image(density_grid, nbits, h=4320,w=7680):
+def make_density_image(density_grid, nbits, h=3840,w=4096):
     #image = torch.zeros(1080,1920)
 
     data = density_grid +5
@@ -73,6 +76,20 @@ def make_density_image(density_grid, nbits, h=4320,w=7680):
 
 
     return res
+
+def gen_sh(filename):
+    with open(filename,'w') as f:
+        f.write(f'cd {args.dir}\n')
+        for p in ['xy','xz','yz']:
+            if args.codec =='mpg2':
+                f.write(f"ffmpeg -y -i {p}_planes.mpg  -pix_fmt gray16be {p}_planes_frame_%d_out.png\n")
+            else:
+                f.write(f"ffmpeg -y -i {p}_planes.mp4  -pix_fmt gray16be {p}_planes_frame_%d_out.png\n")
+                
+        if args.codec =='mpg2':
+            f.write(f"ffmpeg -y -i density_planes.mpg  -pix_fmt gray16be  density_frame_%d_out.png\n")
+        else:
+            f.write(f"ffmpeg -y -i density_planes.mp4  -pix_fmt gray16be  density_frame_%d_out.png\n")
 
 if __name__=='__main__':
 
@@ -91,58 +108,70 @@ if __name__=='__main__':
     parser.add_argument("--codec", type=str, default='h265',
                         help='h265 or mpg2')
 
+    parser.add_argument("--qp", type=int, default=20,
+                        help='qp value for video codec')
+    
+    parser.add_argument ("--gen_sh", action='store_true')
+
 
     args = parser.parse_args()
 
 
-    outdir = os.path.join(args.dir,'../raw_out')
+    outdir = os.path.join(args.dir, f'compressed_{args.qp}')
 
     os.makedirs(outdir, exist_ok=True)
 
+    if args.gen_sh:
+        filename = f"{outdir}/videos_to_planes.sh"
+        gen_sh(filename)
+        exit(0)
 
-    ckpt = torch.load(os.path.join(args.dir, '..', args.model_template))
+    ckpt = torch.load(os.path.join(args.dir, args.model_template), map_location='cpu')
 
     name = args.dir.split('/')[-2]
-    wandbrun = wandb.init(
-        # set the wandb project where this run will be logged
-        project="TeTriRF",
+    # wandbrun = wandb.init(
+    #     # set the wandb project where this run will be logged
+    #     project="TeTriRF",
     
-        # track hyperparameters and run metadata
-        resume = "allow",
-         id = 'compressionV7_'+name+'_'+args.codec,
-    )
+    #     # track hyperparameters and run metadata
+    #     resume = "allow",
+    #      id = 'compressionV7_'+name+'_'+args.codec,
+    # )
 
 
-    filename = '/dev/shm/videos_to_planes.sh'
-    with open(filename,'w') as f:
-        f.write(f'cd {args.dir}\n')
-        for p in ['xy','xz','yz']:
-            if args.codec =='mpg2':
-                f.write(f"ffmpeg -y -i {p}_planes.mpg  -pix_fmt gray16be {p}_planes_frame_%d_out.png\n")
-            else:
-                f.write(f"ffmpeg -y -i {p}_planes.mp4  -pix_fmt gray16be {p}_planes_frame_%d_out.png\n")
+    # filename = '/dev/shm/videos_to_planes.sh'
+    # with open(filename,'w') as f:
+    #     f.write(f'cd {args.dir}\n')
+    #     for p in ['xy','xz','yz']:
+    #         if args.codec =='mpg2':
+    #             f.write(f"ffmpeg -y -i {p}_planes.mpg  -pix_fmt gray16be {p}_planes_frame_%d_out.png\n")
+    #         else:
+    #             f.write(f"ffmpeg -y -i {p}_planes.mp4  -pix_fmt gray16be {p}_planes_frame_%d_out.png\n")
                 
-        if args.codec =='mpg2':
-            f.write(f"ffmpeg -y -i density_planes.mpg  -pix_fmt gray16be  density_frame_%d_out.png\n")
-        else:
-            f.write(f"ffmpeg -y -i density_planes.mp4  -pix_fmt gray16be  density_frame_%d_out.png\n")
-    os.system(f"bash {filename}")
+    #     if args.codec =='mpg2':
+    #         f.write(f"ffmpeg -y -i density_planes.mpg  -pix_fmt gray16be  density_frame_%d_out.png\n")
+    #     else:
+    #         f.write(f"ffmpeg -y -i density_planes.mp4  -pix_fmt gray16be  density_frame_%d_out.png\n")
+    # os.system(f"bash {filename}")
 
     fpsnr = []
     dpsnr = []
-    for frameid in tqdm(range(0, args.numframe,10)):
-        raw_frame = torch.load(os.path.join(args.dir, f'planes_frame_{frameid}.nf'))
+    for frameid in tqdm(range(0, args.numframe)):
+        # raw_frame = torch.load(os.path.join(outdir, f'planes_frame_{frameid}.nf'))
+        raw_frame = torch.load(os.path.join(outdir, f'planes_frame_meta.nf'))
 
         low_bound,high_bound = raw_frame['bounds']
 
         
-        gt_planes = raw_frame['planes']
+        # gt_planes = raw_frame['planes']
 
         tpsnr = []
 
-        for key in raw_frame['img'].keys():
+        for key in raw_frame['plane_size'].keys():
             #ipdb.set_trace()
-            quant_img = cv2.imread(os.path.join(args.dir,f"{key.split('_')[0]}_planes_frame_{frameid+1}_out.png"), -1)
+            quant_img_path = os.path.join(outdir, f"{key.split('_')[0]}_planes_frame_{frameid+1}_out.png")
+            assert os.path.exists(quant_img_path), f"Quantized image {quant_img_path} does not exist"
+            quant_img = cv2.imread(os.path.join(outdir, f"{key.split('_')[0]}_planes_frame_{frameid+1}_out.png"), -1)
 
             #ipdb.set_trace()
             plane = untile_image(torch.tensor(quant_img.astype(np.float32))/int(2**16-1), 
@@ -150,7 +179,7 @@ if __name__=='__main__':
                                 raw_frame['plane_size'][key][3],
                                 raw_frame['plane_size'][key][1])
 
-            tpsnr.append(psnr(plane, (gt_planes[key].cpu()-low_bound)/(high_bound-low_bound)).item())
+            # tpsnr.append(psnr(plane, (gt_planes[key].cpu()-low_bound)/(high_bound-low_bound)).item())
             
 
             plane = plane*(high_bound-low_bound) + low_bound
@@ -164,23 +193,25 @@ if __name__=='__main__':
 
         
 
-        quant_img = cv2.imread(os.path.join(args.dir,f"density_frame_{frameid+1}_out.png"), -1)
-        gt_quant_img = make_density_image(raw_frame['density'],int(2**16-1), h = quant_img.shape[0],w = quant_img.shape[1])
+        quant_img = cv2.imread(os.path.join(outdir, f"density_frame_{frameid+1}_out.png"), -1)
+        # gt_quant_img = make_density_image(raw_frame['density'],int(2**16-1), h = quant_img.shape[0],w = quant_img.shape[1])
+        # desity_plane = untile_image(torch.tensor(quant_img.astype(np.float32))/int(2**16-1), 
+        #                         raw_frame['density'].size(2),
+        #                         raw_frame['density'].size(3),
+        #                         raw_frame['density'].size(1))
         desity_plane = untile_image(torch.tensor(quant_img.astype(np.float32))/int(2**16-1), 
-                                raw_frame['density'].size(2),
-                                raw_frame['density'].size(3),
-                                raw_frame['density'].size(1))
+                                181, 280, 181)
 
         desity_plane = desity_plane*(30+5) - 5
         
-        dpsnr.append(psnr(torch.tensor(quant_img.astype(np.float32))/int(2**16-1), gt_quant_img).item())
+        # dpsnr.append(psnr(torch.tensor(quant_img.astype(np.float32))/int(2**16-1), gt_quant_img).item())
 
  
 
-        fpsnr.append(np.mean(tpsnr))
-        tqdm.write(f"Reconstruction PSNR {np.mean(tpsnr)}")
+        # fpsnr.append(np.mean(tpsnr))
+        # tqdm.write(f"Reconstruction PSNR {np.mean(tpsnr)}")
 
-        tqdm.write(f"Reconstruction Density PSNR {psnr(torch.tensor(quant_img.astype(np.float32))/int(2**16-1), gt_quant_img).item()}")
+        # tqdm.write(f"Reconstruction Density PSNR {psnr(torch.tensor(quant_img.astype(np.float32))/int(2**16-1), gt_quant_img).item()}")
 
 
         ckpt['model_state_dict']['density.grid'] = desity_plane.clone().cuda().unsqueeze(0)
@@ -191,11 +222,11 @@ if __name__=='__main__':
 
 
 
-    data = [[x, y] for (x, y) in zip(range(len(fpsnr)), fpsnr)]
-    table = wandb.Table(data=data, columns = ["frame", "psnr"])
+    # data = [[x, y] for (x, y) in zip(range(len(fpsnr)), fpsnr)]
+    # table = wandb.Table(data=data, columns = ["frame", "psnr"])
 
-    data_d = [[x, y] for (x, y) in zip(range(len(dpsnr)), dpsnr)]
-    table_d = wandb.Table(data=data_d, columns = ["frame", "psnr"])
+    # data_d = [[x, y] for (x, y) in zip(range(len(dpsnr)), dpsnr)]
+    # table_d = wandb.Table(data=data_d, columns = ["frame", "psnr"])
 
-    wandbrun.log({"Reconstruction_Feat_PSNR" : wandb.plot.line(table, "frame", "psnr",
-            title=f"Reconstruction Feature PSNR  qp:{raw_frame['qp']}")})
+    # wandbrun.log({"Reconstruction_Feat_PSNR" : wandb.plot.line(table, "frame", "psnr",
+    #         title=f"Reconstruction Feature PSNR  qp:{raw_frame['qp']}")})

@@ -1,0 +1,11 @@
+  0%|                                     | 0/2 [00:00<?, ?it/s]
+Traceback (most recent call last):
+  File "/work/pi_rsitaram_umass_edu/tungi/TeTriRF/tools/videos_to_planes.py", line 156, in <module>
+    raw_frame = torch.load(os.path.join(outdir, f'planes_frame_{frameid}.nf'))
+  File "/work/pi_rsitaram_umass_edu/tungi/conda/envs/nerf2/lib/python3.9/site-packages/torch/serialization.py", line 594, in load
+    with _open_file_like(f, 'rb') as opened_file:
+  File "/work/pi_rsitaram_umass_edu/tungi/conda/envs/nerf2/lib/python3.9/site-packages/torch/serialization.py", line 230, in _open_file_like
+    return _open_file(name_or_buffer, mode)
+  File "/work/pi_rsitaram_umass_edu/tungi/conda/envs/nerf2/lib/python3.9/site-packages/torch/serialization.py", line 211, in __init__
+    super(_open_file, self).__init__(open(name, mode))
+FileNotFoundError: [Errno 2] No such file or directory: '../logs/flame_steak/compressed_20/planes_frame_0.nf'
